@@ -34,11 +34,29 @@ INTERVAL_MINUTES = int(os.getenv("JOKE_INTERVAL_MIN", "10"))  # 10 par défaut
 JOKE_URL = "https://v2.jokeapi.dev/joke/Any?lang=fr&blacklistFlags=nsfw,racist,sexist,explicit"
 TELEGRAM_API = "https://api.telegram.org"
 
+# Fichier log pour stocker les blagues déjà envoyées
+JOKE_LOG_FILE = os.getenv("JOKE_LOG_FILE", "sent_jokes.log")
+
 RUNNING = True
 
 def _log(msg: str) -> None:
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{ts}] {msg}", flush=True)
+
+
+def _load_sent_jokes() -> set[str]:
+    """Charge les blagues déjà envoyées depuis le fichier de log."""
+    try:
+        with open(JOKE_LOG_FILE, "r", encoding="utf-8") as f:
+            return {line.strip() for line in f if line.strip()}
+    except FileNotFoundError:
+        return set()
+
+
+def _append_joke_to_log(joke: str) -> None:
+    """Ajoute une blague au fichier de log."""
+    with open(JOKE_LOG_FILE, "a", encoding="utf-8") as f:
+        f.write(joke.replace("\n", " ") + "\n")
 
 def get_joke_fr() -> str:
     """Récupère une blague FR depuis JokeAPI (format texte simple)."""
@@ -101,10 +119,16 @@ def main():
         f"🚀 Bot blagues démarré ! Je t'enverrai une blague toutes les {INTERVAL_MINUTES} minutes 😉",
     )
 
+    sent_jokes = _load_sent_jokes()
     interval = max(1, INTERVAL_MINUTES) * 60
     while RUNNING:
         joke = get_joke_fr()
+        if joke in sent_jokes:
+            _log("Blague déjà envoyée, nouvelle tentative...")
+            continue
         send_telegram_message(BOT_TOKEN, CHAT_ID, joke)
+        sent_jokes.add(joke)
+        _append_joke_to_log(joke)
         for _ in range(interval):
             if not RUNNING:
                 break
