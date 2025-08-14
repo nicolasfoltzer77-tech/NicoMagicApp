@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Bot blagues Telegram – envoie une blague en français toutes les 10 minutes.
-Aucune dépendance externe : uniquement la bibliothèque standard Python.
+Bot blagues Telegram – envoie une blague en français à intervalle régulier
+(10 minutes par défaut). Aucune dépendance externe : uniquement la bibliothèque
+standard Python.
 
 CONFIGURATION :
 1) Remplir BOT_TOKEN et CHAT_ID ci-dessous (ou définir les variables d'env
    TELEGRAM_BOT_TOKEN et TELEGRAM_CHAT_ID).
-2) Lancer :  python3 bot_blagues.py &
+2) Lancer :  python3 bot.py &
 
-Astuce : CTRL+C pour arrêter (ou pkill -f bot_blagues.py).
+Astuce : CTRL+C pour arrêter (ou pkill -f bot.py).
 """
 
 import json
@@ -22,9 +23,12 @@ import urllib.request
 from datetime import datetime
 
 # ====== À REMPLIR ======
-BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8257199418:AAFPhbR9_ZDj-qiYM1lIm1hIe6QFYjUZ0O0")  # ex: 123456:ABC-...
-CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "7552287774")        # ex: 123456789
-INTERVAL_MINUTES = int(os.getenv("JOKE_INTERVAL_MIN", "1"))  # 10 par défaut
+# Les identifiants Telegram doivent être fournis via des variables d'environnement
+# ou en modifiant les lignes ci-dessous. Les valeurs par défaut sont vides afin
+# d'éviter toute fuite accidentelle de jeton.
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")  # ex: 123456:ABC-...
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")      # ex: 123456789
+INTERVAL_MINUTES = int(os.getenv("JOKE_INTERVAL_MIN", "10"))  # 10 par défaut
 # =======================
 
 JOKE_URL = "https://v2.jokeapi.dev/joke/Any?lang=fr&blacklistFlags=nsfw,racist,sexist,explicit"
@@ -91,7 +95,11 @@ def main():
     signal.signal(signal.SIGTERM, handle_signal)
 
     _log(f"Bot démarré. Une blague toutes les {INTERVAL_MINUTES} minutes.")
-    send_telegram_message(BOT_TOKEN, CHAT_ID, "🚀 Bot blagues démarré ! Je t'enverrai une blague toutes les 10 minutes 😉")
+    send_telegram_message(
+        BOT_TOKEN,
+        CHAT_ID,
+        f"🚀 Bot blagues démarré ! Je t'enverrai une blague toutes les {INTERVAL_MINUTES} minutes 😉",
+    )
 
     interval = max(1, INTERVAL_MINUTES) * 60
     while RUNNING:
