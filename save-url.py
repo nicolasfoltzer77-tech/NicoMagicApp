@@ -15,7 +15,14 @@ def main():
     # --- Modifier ces 3 lignes directement si besoin ---
     username = "nicolasfoltzer77-tech"
     token = "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"
-    repo = "NicoMagicAp"
+    repo = "NicoMagicApp"
+    GIT_BRANCH=main
+    REPO_PATH=/notebooks
+    GIT_USER=nicolasfoltzer77-tech
+    GIT_TOKEN=ghp_votreTokenIci
+    GIT_REPO=NicoMagicApp
+    GIT_BRANCH=main
+    REPO_PATH=/notebooks
     # ---------------------------------------------------
 
     if not all([username, token, repo]):

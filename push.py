@@ -4,43 +4,46 @@
 import os
 import subprocess
 
-# Lecture du .env manuellement
-def read_env_var(key, env_path="/notebooks/.env"):
-    if not os.path.exists(env_path):
-        return None
-    with open(env_path, "r") as f:
-        for line in f:
-            if line.startswith(f"{key}="):
-                return line.strip().split("=", 1)[1]
-    return None
+# 📌 Fichier .env à lire
+ENV_PATH = "/notebooks/.env"
 
 def run(cmd, cwd=None):
+    """Exécute une commande shell"""
     print(f"$ {' '.join(cmd)}")
-    return subprocess.run(cmd, cwd=cwd, check=True)
+    subprocess.run(cmd, cwd=cwd, check=True)
+
+# 🔹 Lecture des variables du .env
+def load_env(path):
+    env_vars = {}
+    with open(path, "r") as f:
+        for line in f:
+            if "=" in line:
+                key, value = line.strip().split("=", 1)
+                env_vars[key] = value
+    return env_vars
 
 def main():
-    repo_dir = "/notebooks"
-    print(f"📂 Dossier cible : {repo_dir}")
+    env = load_env(ENV_PATH)
 
-    # Charger URL depuis le .env
-    git_url = read_env_var("GIT_URL")
-    if not git_url:
-        print("❌ GIT_URL introuvable dans .env")
+    user = env.get("GIT_USER") or "nicolasfoltzer77-tech"
+    token = env.get("GIT_TOKEN")
+    repo = env.get("GIT_REPO") or "NicoMagicApp"
+    branch = env.get("GIT_BRANCH") or "main"
+    repo_path = env.get("REPO_PATH") or "/notebooks"
+
+    if not token:
+        print("❌ Erreur : GIT_TOKEN manquant dans .env")
         return
 
-    # Config remote origin
-    run(["git", "remote", "set-url", "origin", git_url])
-    print(f"🔗 Remote 'origin' mis à jour : {git_url}")
+    # 🔹 Assemblage de l’URL complète
+    git_url = f"https://{user}:{token}@github.com/{user}/{repo}.git"
+    print(f"📌 Remote 'origin' = {git_url}")
 
-    # Ajout / commit
-    run(["git", "add", "-A"], cwd=repo_dir)
-    try:
-        run(["git", "commit", "-m", "update"], cwd=repo_dir)
-    except subprocess.CalledProcessError:
-        print("ℹ️ Aucun changement à commit.")
-
-    # Push
-    run(["git", "push", "-u", "origin", "main"], cwd=repo_dir)
+    # 🔹 Git add / commit / push
+    run(["git", "remote", "set-url", "origin", git_url], cwd=repo_path)
+    run(["git", "add", "-A"], cwd=repo_path)
+    run(["git", "commit", "-m", "update"], cwd=repo_path)
+    run(["git", "push", "-u", "origin", branch], cwd=repo_path)
 
 if __name__ == "__main__":
     main()
