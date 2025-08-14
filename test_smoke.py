@@ -1,13 +1,23 @@
-# Local smoke test (offline). Run with: python test_smoke.py
-# Ensures bot.py can be imported and main guard prevents execution on import.
+"""Smoke test for importing the :mod:`bot` module.
+
+This file acts both as a pytest test and as a standalone script.  When run
+directly (``python test_smoke.py``) it prints whether the import succeeded.
+When collected by pytest, the ``test_import_bot`` function is executed and will
+fail if the import raises an exception.
+"""
 
 import importlib
-import sys
 
-try:
-    import bot
-    print("✅ Import success: bot module loaded.")
-    sys.exit(0)
-except Exception as e:
-    print(f"❌ Import failed: {e}")
-    sys.exit(1)
+
+def test_import_bot() -> None:
+    """Ensure that the ``bot`` module can be imported."""
+    importlib.import_module("bot")
+
+
+if __name__ == "__main__":  # pragma: no cover - manual invocation only
+    try:
+        importlib.import_module("bot")
+        print("\u2705 Import success: bot module loaded.")
+    except Exception as exc:  # pragma: no cover - informational output
+        print(f"\u274c Import failed: {exc}")
+
