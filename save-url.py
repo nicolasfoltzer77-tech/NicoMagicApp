@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-save_url.py
-Enregistre l'URL GitHub dans un fichier .env (variable GIT_URL).
+save_url_with_token.py
+Construit une URL GitHub avec username + token + repo, puis l'enregistre dans .env.
 """
 
 import sys
@@ -12,15 +12,17 @@ from pathlib import Path
 ENV_FILE = Path(".env")
 
 def main():
-    if len(sys.argv) > 1:
-        url = sys.argv[1].strip()
-    else:
-        url = "https://github.com/nicolasfoltzer77-tech/NicoMagicApp.git"
-        
-        
-    if not url.startswith("http"):
-        print("❌ URL invalide. Elle doit commencer par http(s)://")
+    # --- Modifier ces 3 lignes directement si besoin ---
+    username = "nicolasfoltzer77-tech"
+    token = "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"
+    repo = "NicoMagicAp"
+    # ---------------------------------------------------
+
+    if not all([username, token, repo]):
+        print("❌ Veuillez renseigner username, token et repo dans le code.")
         sys.exit(1)
+
+    url = f"https://{username}:{token}@github.com/{username}/{repo}.git"
 
     lines = []
     if ENV_FILE.exists():
@@ -33,7 +35,7 @@ def main():
     with open(ENV_FILE, "w", encoding="utf-8") as f:
         f.writelines(lines)
 
-    print(f"✅ URL enregistrée dans {ENV_FILE.resolve()}")
+    print(f"✅ URL avec token enregistrée dans {ENV_FILE.resolve()}")
     print(f"   GIT_URL={url}")
 
 if __name__ == "__main__":
