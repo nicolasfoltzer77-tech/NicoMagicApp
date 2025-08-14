@@ -2,49 +2,39 @@
 import os
 import subprocess
 
-# Lecture du .env
+# Récupération depuis .env
 env_path = ".env"
-if not os.path.exists(env_path):
-    print("❌ Fichier .env introuvable")
-    exit(1)
+if os.path.exists(env_path):
+    with open(env_path) as f:
+        for line in f:
+            if "=" in line:
+                key, val = line.strip().split("=", 1)
+                os.environ[key] = val
 
-with open(env_path) as f:
-    for line in f:
-        if line.strip() and not line.startswith("#"):
-            key, value = line.strip().split("=", 1)
-            os.environ[key] = value
+TOKEN = os.getenv("GIT_TOKEN")
+USER = os.getenv("GIT_USER")
+REPO = os.getenv("GIT_REPO")
+BRANCH = os.getenv("GIT_BRANCH", "main")
+REPO_PATH = os.getenv("REPO_PATH", ".")
 
-# Récupération des infos
-token = os.getenv("GIT_TOKEN")
-user = os.getenv("GIT_USER")
-repo = os.getenv("GIT_REPO")
-branch = os.getenv("GIT_BRANCH", "main")
-repo_path = os.getenv("REPO_PATH", ".")
-
-if not all([token, user, repo]):
+if not all([TOKEN, USER, REPO]):
     print("❌ Variables GIT_TOKEN, GIT_USER ou GIT_REPO manquantes dans .env")
     exit(1)
 
-# Construction de l'URL
-git_url = f"https://{token}@github.com/{user}/{repo}.git"
-
-print(f"📂 Dossier cible : {repo_path}")
-print(f"🔗 Remote 'origin' = {git_url}")
+# Construit l'URL correcte
+git_url = f"https://{USER}:{TOKEN}@github.com/{USER}/{REPO}.git"
 
 def run(cmd, cwd=None):
     print(f"$ {' '.join(cmd)}")
     subprocess.run(cmd, cwd=cwd, check=True)
 
-try:
-    # Mise à jour du remote origin
-    run(["git", "remote", "set-url", "origin", git_url], cwd=repo_path)
+print(f"📂 Dossier cible : {REPO_PATH}")
 
-    # Add, commit, push
-    run(["git", "add", "-A"], cwd=repo_path)
-    run(["git", "commit", "-m", "update"], cwd=repo_path)
-    run(["git", "push", "-u", "origin", branch], cwd=repo_path)
+# Met à jour l'origin
+run(["git", "remote", "set-url", "origin", git_url])
+print(f"🔗 Remote 'origin' mis à jour : {git_url}")
 
-    print("✅ Push terminé avec succès")
-except subprocess.CalledProcessError as e:
-    print(f"❌ Erreur : {e}")
-    exit(1)
+# Commit et push
+run(["git", "add", "-A"], cwd=REPO_PATH)
+run(["git", "commit", "-m", "update"], cwd=REPO_PATH)
+run(["git", "push", "-u", "origin", BRANCH], cwd=REPO_PATH)
