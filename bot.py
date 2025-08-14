@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Bot blagues Telegram – envoie une blague en français toutes les 10 minutes.
-Aucune dépendance externe : uniquement la bibliothèque standard Python.
+Bot blagues Telegram – envoie une blague en français à un intervalle choisi
+par l'utilisateur.
+Une seule dépendance : la bibliothèque standard Python.
 
 CONFIGURATION :
 1) Remplir BOT_TOKEN et CHAT_ID ci-dessous (ou définir les variables d'env
    TELEGRAM_BOT_TOKEN et TELEGRAM_CHAT_ID).
-2) Lancer :  python3 bot_blagues.py &
+2) Lancer :  python3 bot.py &
 
-Astuce : CTRL+C pour arrêter (ou pkill -f bot_blagues.py).
+Astuce : CTRL+C pour arrêter (ou pkill -f bot.py).
 """
 
 import json
@@ -24,7 +25,6 @@ from datetime import datetime
 # ====== À REMPLIR ======
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8257199418:AAFPhbR9_ZDj-qiYM1lIm1hIe6QFYjUZ0O0")  # ex: 123456:ABC-...
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "7552287774")        # ex: 123456789
-INTERVAL_MINUTES = int(os.getenv("JOKE_INTERVAL_MIN", "1"))  # 10 par défaut
 # =======================
 
 JOKE_URL = "https://v2.jokeapi.dev/joke/Any?lang=fr&blacklistFlags=nsfw,racist,sexist,explicit"
@@ -82,6 +82,24 @@ def validate_config() -> bool:
         ok = False
     return ok
 
+
+def ask_interval() -> tuple[int, str]:
+    """Demande à l'utilisateur la fréquence d'envoi des blagues.
+
+    Retourne un tuple (interval_seconds, description_humaine).
+    """
+    print("Choisis la fréquence des blagues :")
+    print("  [d] Défaut : 6 blagues par heure")
+    print("  [c] Court  : une blague toutes les 10 secondes")
+    print("  [l] Long   : une blague par jour")
+    choix = input("Ton choix [d/c/l] (défaut d) : ").strip().lower()
+
+    if choix == "c":
+        return 10, "une blague toutes les 10 secondes"
+    if choix == "l":
+        return 24 * 60 * 60, "une blague par jour"
+    return 10 * 60, "6 blagues par heure"
+
 def main():
     if not validate_config():
         sys.exit(1)
@@ -89,11 +107,11 @@ def main():
     # Gestion Ctrl+C / arrêt système
     signal.signal(signal.SIGINT, handle_signal)
     signal.signal(signal.SIGTERM, handle_signal)
+    interval, desc = ask_interval()
 
-    _log(f"Bot démarré. Une blague toutes les {INTERVAL_MINUTES} minutes.")
-    send_telegram_message(BOT_TOKEN, CHAT_ID, "🚀 Bot blagues démarré ! Je t'enverrai une blague toutes les 10 minutes 😉")
+    _log(f"Bot démarré, {desc}.")
+    send_telegram_message(BOT_TOKEN, CHAT_ID, f"🚀 Bot blagues démarré ! Je t'enverrai {desc} 😉")
 
-    interval = max(1, INTERVAL_MINUTES) * 60
     while RUNNING:
         joke = get_joke_fr()
         send_telegram_message(BOT_TOKEN, CHAT_ID, joke)
