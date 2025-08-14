@@ -1,40 +1,46 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import os
 import subprocess
 
-# Charger l'URL depuis .env
-ENV_PATH = "/notebooks/.env"
-if not os.path.exists(ENV_PATH):
-    print(f"❌ Fichier {ENV_PATH} introuvable.")
-    exit(1)
+# Lecture du .env manuellement
+def read_env_var(key, env_path="/notebooks/.env"):
+    if not os.path.exists(env_path):
+        return None
+    with open(env_path, "r") as f:
+        for line in f:
+            if line.startswith(f"{key}="):
+                return line.strip().split("=", 1)[1]
+    return None
 
-with open(ENV_PATH) as f:
-    for line in f:
-        if line.startswith("GIT_URL="):
-            GIT_URL = line.strip().split("=", 1)[1]
-            break
-    else:
-        print("❌ GIT_URL introuvable dans .env.")
-        exit(1)
+def run(cmd, cwd=None):
+    print(f"$ {' '.join(cmd)}")
+    return subprocess.run(cmd, cwd=cwd, check=True)
 
-def run(cmd):
-    subprocess.run(cmd, check=True)
+def main():
+    repo_dir = "/notebooks"
+    print(f"📂 Dossier cible : {repo_dir}")
 
-try:
-    print("📂 Dossier cible : /notebooks")
-    run(["git", "remote", "set-url", "origin", GIT_URL])
-    print(f"🔗 Remote 'origin' mis à jour : {GIT_URL}")
+    # Charger URL depuis le .env
+    git_url = read_env_var("GIT_URL")
+    if not git_url:
+        print("❌ GIT_URL introuvable dans .env")
+        return
 
-    run(["git", "add", "-A"])
+    # Config remote origin
+    run(["git", "remote", "set-url", "origin", git_url])
+    print(f"🔗 Remote 'origin' mis à jour : {git_url}")
 
-    # On tente le commit mais on ignore l'erreur "rien à commit"
+    # Ajout / commit
+    run(["git", "add", "-A"], cwd=repo_dir)
     try:
-        subprocess.run(["git", "commit", "-m", "update"], check=True)
+        run(["git", "commit", "-m", "update"], cwd=repo_dir)
     except subprocess.CalledProcessError:
         print("ℹ️ Aucun changement à commit.")
 
-    run(["git", "push", "-u", "origin", "main"])
-    print("✅ Push effectué avec succès.")
+    # Push
+    run(["git", "push", "-u", "origin", "main"], cwd=repo_dir)
 
-except subprocess.CalledProcessError as e:
-    print(f"❌ Erreur pendant l'exécution : {e}")
+if __name__ == "__main__":
+    main()
