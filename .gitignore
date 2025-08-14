@@ -1,7 +1,2 @@
-# Ignorer logs et fichiers temporaires
-*.log
-__pycache__/
-.ipynb_checkpoints/
-
-# Ignorer fichiers spécifiques
-bot.log
+secrets.json
+.env
