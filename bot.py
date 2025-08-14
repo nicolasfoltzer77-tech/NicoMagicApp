@@ -70,6 +70,17 @@ def send_telegram_message(token: str, chat_id: str, text: str) -> None:
     except Exception as e:
         _log(f"Erreur d'envoi Telegram : {e}")
 
+
+def send_joke(token: str, chat_id: str, joke: str, delay: int = 4) -> None:
+    """Envoie une blague en deux parties si elle contient "? …"."""
+    if "? …" in joke:
+        part1, part2 = joke.split("? …", 1)
+        send_telegram_message(token, chat_id, part1.strip() + " ?")
+        time.sleep(delay)
+        send_telegram_message(token, chat_id, part2.strip())
+    else:
+        send_telegram_message(token, chat_id, joke)
+
 def handle_signal(signum, frame):
     global RUNNING
     RUNNING = False
@@ -104,7 +115,7 @@ def main():
     interval = max(1, INTERVAL_MINUTES) * 60
     while RUNNING:
         joke = get_joke_fr()
-        send_telegram_message(BOT_TOKEN, CHAT_ID, joke)
+        send_joke(BOT_TOKEN, CHAT_ID, joke)
         for _ in range(interval):
             if not RUNNING:
                 break
