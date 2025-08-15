@@ -20,6 +20,7 @@ import sys
 import time
 import urllib.parse
 import urllib.request
+import urllib.error
 from datetime import datetime
 
 # ====== À REMPLIR ======
@@ -72,8 +73,8 @@ def get_joke_fr() -> str:
         if setup or delivery:
             return f"{setup} ... {delivery}"
         return "Pas de blague disponible 😅"
-    except Exception as e:
-        return f"Oups, impossible de récupérer une blague : {e}"
+    except (urllib.error.URLError, json.JSONDecodeError) as exc:
+        return f"Oups, impossible de récupérer une blague : {exc}"
 
 def send_telegram_message(token: str, chat_id: str, text: str) -> None:
     """Envoie un message via l'API Telegram sans dépendances externes."""
@@ -85,13 +86,19 @@ def send_telegram_message(token: str, chat_id: str, text: str) -> None:
         with urllib.request.urlopen(req, timeout=10) as resp:
             if resp.status != 200:
                 _log(f"Telegram a répondu {resp.status}")
-    except Exception as e:
-        _log(f"Erreur d'envoi Telegram : {e}")
+    except urllib.error.URLError as exc:
+        _log(f"Erreur d'envoi Telegram : {exc}")
 
-def handle_signal(signum, frame):
+def handle_signal(signum: int, _frame: object) -> None:
+    """Stop the main loop when receiving a termination signal.
+
+    ``frame`` from :func:`signal.signal` is unused but kept for compatibility.
+    ``pylint`` (and other linters) expect unused parameters to start with an
+    underscore, hence ``_frame``.
+    """
     global RUNNING
     RUNNING = False
-    _log("Arrêt demandé, on termine proprement...")
+    _log(f"Arrêt signal {signum} reçu, on termine proprement...")
     send_telegram_message(BOT_TOKEN, CHAT_ID, "🛑 Bot blagues arrêté.")
 
 def validate_config() -> bool:
